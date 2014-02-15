@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Globalization;
 using System.Text;
 using System.IO;
 using System.Windows.Forms;
@@ -9,22 +7,22 @@ namespace OverviewerGUI
 {
     public class ConsoleRedirect : TextWriter
     {
-        TextBox _output = null;
+        readonly TextBox _output;
 
         public ConsoleRedirect(TextBox output)
         {
-            this._output = output;
+            _output = output;
         }
 
         public override void Write(char value)
         {
-            MethodInvoker action = delegate { _output.AppendText(value.ToString()); };
+            MethodInvoker action = () => _output.AppendText(value.ToString(CultureInfo.InvariantCulture));
             _output.BeginInvoke(action);
         }
 
         public override Encoding Encoding
         {
-            get { return System.Text.Encoding.UTF8; }
+            get { return Encoding.UTF8; }
         }
     }
 }

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 using System.IO;
 
-namespace Ini
+namespace OverviewerGUI
 {
     /// <summary>
     /// Create a New INI file to store or load data
@@ -11,7 +10,7 @@ namespace Ini
     /// Created by BLaZiNiX at http://www.codeproject.com/Articles/1966/An-INI-file-handling-class-using-C
     public class IniFile
     {
-        public string path;
+        public string Path;
 
         [DllImport("kernel32")]
         private static extern long WritePrivateProfileString(string section,
@@ -25,14 +24,12 @@ namespace Ini
         /// INIFile Constructor.
         /// </summary>
         /// <PARAM name="INIPath"></PARAM>
-        public IniFile(string INIPath)
+        public IniFile(string iniPath)
         {
-            path = INIPath;
-            if (!File.Exists(path))
-            {
-                var configFile = File.Create(path);
-                configFile.Close();
-            }
+            Path = iniPath;
+            if (File.Exists(Path)) return;
+            var configFile = File.Create(Path);
+            configFile.Close();
         }
         /// <summary>
         /// Write Data to the INI File
@@ -43,9 +40,9 @@ namespace Ini
         /// Key Name
         /// <PARAM name="Value"></PARAM>
         /// Value Name
-        public void IniWriteValue(string Section, string Key, string Value)
+        public void IniWriteValue(string section, string key, string value)
         {
-            WritePrivateProfileString(Section, Key, Value, this.path);
+            WritePrivateProfileString(section, key, value, Path);
         }
 
         /// <summary>
@@ -55,11 +52,11 @@ namespace Ini
         /// <PARAM name="Key"></PARAM>
         /// <PARAM name="Path"></PARAM>
         /// <returns></returns>
-        public string IniReadValue(string Section, string Key)
+        public string IniReadValue(string section, string key)
         {
-            StringBuilder temp = new StringBuilder(255);
-            int i = GetPrivateProfileString(Section, Key, "", temp,
-                                            255, this.path);
+            var temp = new StringBuilder(255);
+            GetPrivateProfileString(section, key, "", temp,
+                                    255, Path);
             return temp.ToString();
 
         }
