@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Windows.Forms;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
-
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using OverviewerGUI.Properties;
 
 namespace OverviewerGUI
 {
     public partial class MainWindow : Form
     {
-        private string _worldDir;
-        private string _outDir;
-        private string _configFile;
-        TextWriter _writer;
-        private Process _proc = new Process();
-        private Boolean _haltedRender;
-        private Boolean _windowExpanded;
-        private readonly IniFile _configuration = new IniFile(".\\OverviewerGUI.ini");
-        private readonly String[] _splashes = {
+        public delegate void SetProgressBarDelegate();
+
+        public delegate void SetProgressBarPercentDelegate(int per);
+
+        public delegate void SetStatusDelegate(string info);
+
+        private readonly String[] _splashes =
+            {
                 "Can't track the killers IP!",
                 "CLOOOOOOOUD",
                 "Uses the minecraft Overviewer!",
@@ -34,9 +34,19 @@ namespace OverviewerGUI
                 "Some people want it in python!"
             };
 
-        public delegate void SetProgressBarDelegate();
-        public delegate void SetProgressBarPercentDelegate(int per);
-        public delegate void SetStatusDelegate(string info);
+        private string _configFile;
+        private Boolean _haltedRender;
+        private string _mapDir = Settings.Default.mapDir;
+        private string _outDir = Settings.Default.outputDir;
+        private Process _proc = new Process();
+        private Boolean _windowExpanded;
+        private TextWriter _writer;
+        private readonly string _processName = IsMono() ? "overviewer.py" : "overviewer.exe";
+
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
 
         public void SetStatus(string info)
         {
@@ -87,11 +97,6 @@ namespace OverviewerGUI
             }
         }
 
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
-
 /*
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
         { 
@@ -108,18 +113,14 @@ namespace OverviewerGUI
             Console.WriteLine(@"Now redirecting output to the text box");
             Text = @"Overviewer GUI - " + GetSplash();
 
-            //Configuration initialization
-            var configWorldPath = _configuration.IniReadValue("Paths", "worldDir");
-            var configOutPath = _configuration.IniReadValue("Paths", "outDir");
-            if (!string.IsNullOrEmpty(configWorldPath)) {
-                worldFolder.Text = configWorldPath;
-                _worldDir = configWorldPath;
+            if (!string.IsNullOrEmpty(_mapDir))
+            {
+                worldFolder.Text = _mapDir;
             }
 
-            if (string.IsNullOrEmpty(configOutPath)) return;
+            if (string.IsNullOrEmpty(_outDir)) return;
 
-            outputFolder.Text = configOutPath;
-            _outDir = configOutPath;
+            outputFolder.Text = _outDir;
         }
 
         private void buttonLevelBrowse_Click(object sender, EventArgs e)
@@ -128,8 +129,8 @@ namespace OverviewerGUI
             var result = LevelDialog.ShowDialog();
             if (result != DialogResult.OK) return;
             worldFolder.Text = LevelDialog.SelectedPath;
-            _worldDir = LevelDialog.SelectedPath;
-            _configuration.IniWriteValue("Paths", "worldDir", LevelDialog.SelectedPath);
+            _mapDir = LevelDialog.SelectedPath;
+            _mapDir = LevelDialog.SelectedPath;
         }
 
         private void buttonDirBrowse_Click(object sender, EventArgs e)
@@ -139,12 +140,13 @@ namespace OverviewerGUI
             if (result != DialogResult.OK) return;
             outputFolder.Text = outputDir.SelectedPath;
             _outDir = outputDir.SelectedPath;
-            _configuration.IniWriteValue("Paths", "outDir", outputDir.SelectedPath);
         }
 
         private void advancedModeHelp_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            MessageBox.Show(@"In advanced mode, instead of specifying a world dir and an output directory, you specify a configuration file for the Overviewer. If using the config file, you do not need to specify world dir or output dir with the GUI - you can specify them in the config file :). More details on th config file are avaliable at docs.overviewer.org", @"What is advanced mode?", MessageBoxButtons.OK);
+            MessageBox.Show(
+                @"In advanced mode, instead of specifying a world dir and an output directory, you specify a configuration file for the Overviewer. If using the config file, you do not need to specify world dir or output dir with the GUI - you can specify them in the config file :). More details on th config file are avaliable at docs.overviewer.org",
+                @"What is advanced mode?", MessageBoxButtons.OK);
         }
 
         private void startRender_Click_1(object sender, EventArgs e)
@@ -155,7 +157,7 @@ namespace OverviewerGUI
             }
             else
             {
-                SimpleRender(_worldDir, _outDir);
+                SimpleRender(_mapDir, _outDir);
             }
             startRender.Enabled = false;
         }
@@ -168,7 +170,7 @@ namespace OverviewerGUI
                         {
                             FileName = @"cmd",
                             Arguments =
-                                "/c overviewer.exe --rendermodes=" + GetRenderModes() + " \"" + worldDir + "\" \"" +
+                                "/c " + _processName + " --rendermodes=" + GetRenderModes() + " \"" + worldDir + "\" \"" +
                                 outDir +
                                 "\" ",
                             RedirectStandardOutput = true,
@@ -186,7 +188,6 @@ namespace OverviewerGUI
             _proc.BeginErrorReadLine();
             _proc.BeginOutputReadLine();
             _proc.Exited += ProcessExited;
-
         }
 
         private void ConfigRender(String config)
@@ -196,7 +197,7 @@ namespace OverviewerGUI
                     StartInfo =
                         {
                             FileName = @"cmd",
-                            Arguments = "/c overviewer.exe --config=\"" + config + "\" ",
+                            Arguments = "/c " + _processName + " --config=\"" + config + "\" ",
                             RedirectStandardOutput = true,
                             RedirectStandardError = true
                         },
@@ -213,7 +214,6 @@ namespace OverviewerGUI
             _proc.BeginErrorReadLine();
             _proc.BeginOutputReadLine();
             _proc.Exited += ProcessExited;
-
         }
 
         private void configButton_Click_1(object sender, EventArgs e)
@@ -224,7 +224,7 @@ namespace OverviewerGUI
             _configFile = configDialog.FileName;
         }
 
-        void proc_DataReceived(object sender, DataReceivedEventArgs e)
+        private void proc_DataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data == null)
             {
@@ -249,14 +249,16 @@ namespace OverviewerGUI
 
 
                 //This could probably be done so much better, but I'm a noob with regular expressions so...
-                const string startPattern = "[0-9]+[-][0-9]+[-][0-9]+ [0-9]+[:][0-9]+[:][0-9]+  Rendered [0-9]+ of [0-9]+.";
+                const string startPattern =
+                    "[0-9]+[-][0-9]+[-][0-9]+ [0-9]+[:][0-9]+[:][0-9]+  Rendered [0-9]+ of [0-9]+.";
                 var startExpression = new Regex(startPattern);
                 const string perPattern = "% complete";
                 var perExpression = new Regex(perPattern);
 
-                if (System.Text.RegularExpressions.Regex.IsMatch(stripTiles, perPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                if (Regex.IsMatch(stripTiles, perPattern, RegexOptions.IgnoreCase))
                 {
-                    foreach (var per in startExpression.Split(stripTiles).SelectMany(sub => perExpression.Split(sub)))
+                    foreach (var per in startExpression.Split(stripTiles).SelectMany(sub => perExpression.Split(sub))
+                        )
                     {
                         SetProgressBarToContinuous();
                         if (string.IsNullOrEmpty(per)) continue;
@@ -267,9 +269,9 @@ namespace OverviewerGUI
             }
             Console.WriteLine(e.Data);
         }
-        private void ProcessExited(Object sender, EventArgs e)   
-        {
 
+        private void ProcessExited(Object sender, EventArgs e)
+        {
             startRender.Enabled = true;
             SetProgressBarToContinuous();
             renderProgress.Value = 100;
@@ -284,8 +286,6 @@ namespace OverviewerGUI
                 SetStatus("Render complete!");
                 MessageBox.Show(@"The render is complete! Go to " + _outDir + @" and click index.html to view it! :)");
             }
-            
-            
         }
 
         private String GetRenderModes()
@@ -333,7 +333,7 @@ namespace OverviewerGUI
 
         private void reportError_Click(object sender, EventArgs e)
         {
-            var data = new System.Collections.Specialized.NameValueCollection();
+            var data = new NameValueCollection();
             var header = "###########################################" + Environment.NewLine +
                             "#                                         #" + Environment.NewLine +
                             "#   This pastebin was generated by the    #" + Environment.NewLine +
@@ -375,7 +375,6 @@ namespace OverviewerGUI
 
         private void expandCollapseButton_Click(object sender, EventArgs e)
         {
-
             if (_windowExpanded)
             {
                 if (ActiveForm != null) ActiveForm.Height = 359;
@@ -390,5 +389,9 @@ namespace OverviewerGUI
             _windowExpanded = !_windowExpanded;
         }
 
+        public static bool IsMono()
+        {
+            return Type.GetType("Mono.Runtime") != null;
+        }
     }
 }

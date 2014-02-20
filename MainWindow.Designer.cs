@@ -226,8 +226,8 @@
             // 
             // worldFolder
             // 
-            this.worldFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.worldFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.worldFolder.BackColor = System.Drawing.SystemColors.Control;
             this.worldFolder.Location = new System.Drawing.Point(6, 19);
             this.worldFolder.Name = "worldFolder";
@@ -283,7 +283,6 @@
             this.advancedModeHelp.Name = "advancedModeHelp";
             this.advancedModeHelp.Size = new System.Drawing.Size(126, 13);
             this.advancedModeHelp.TabIndex = 0;
-            this.advancedModeHelp.TabStop = true;
             this.advancedModeHelp.Text = "What\'s advanced mode?";
             this.advancedModeHelp.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.advancedModeHelp_LinkClicked);
             // 
