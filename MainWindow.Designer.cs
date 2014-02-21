@@ -283,6 +283,7 @@
             this.advancedModeHelp.Name = "advancedModeHelp";
             this.advancedModeHelp.Size = new System.Drawing.Size(126, 13);
             this.advancedModeHelp.TabIndex = 0;
+            this.advancedModeHelp.TabStop = true;
             this.advancedModeHelp.Text = "What\'s advanced mode?";
             this.advancedModeHelp.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.advancedModeHelp_LinkClicked);
             // 
@@ -374,6 +375,7 @@
             this.MaximizeBox = false;
             this.Name = "MainWindow";
             this.Text = "Overviewer GUI";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainWindow_FormClosing);
             this.Load += new System.EventHandler(this.MainWindow_Load);
             this.outputGroupBox.ResumeLayout(false);
             this.outputGroupBox.PerformLayout();
