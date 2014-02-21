@@ -2,8 +2,7 @@
 
 namespace OverviewerGUI.Config
 {
-    public class Render
+    public class Worlds : Dictionary<string, string>
     {
-        private Dictionary<string, string> _settings;
     }
 }
